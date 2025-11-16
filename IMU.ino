@@ -1,42 +1,55 @@
 #include <Wire.h>
-#include <MPU6050.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_MPU6050.h>
 
-MPU6050 mpu;
+Adafruit_MPU6050 mpu;
 
 void setup() {
-  Serial.begin(9600);
-  Wire.begin();
+  Serial.begin(115200);
+  while (!Serial)
+    delay(10); // Seri bağlantı açılana kadar bekle
 
-  Serial.println("MPU6050 baslatiliyor...");
+  Serial.println("MPU6050 başlatılıyor...");
 
-  mpu.initialize();  // Sensörü başlat
-  if (mpu.testConnection()) {
-    Serial.println("MPU6050 baglantisi basarili!");
-  } else {
-    Serial.println("MPU6050 baglantisi basarisiz!");
-    while (1); // Bağlantı yoksa durur
+  if (!mpu.begin()) {
+    Serial.println("MPU6050 bulunamadı! Bağlantıyı kontrol et.");
+    while (1) {
+      delay(10);
+    }
   }
+  Serial.println("MPU6050 bulundu!");
 
-  delay(1000);
+  // Sensör aralıklarını ayarla (isteğe bağlı)
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+
+  delay(100);
 }
 
 void loop() {
-  int16_t ax, ay, az; // ivmeölçer verileri
-  int16_t gx, gy, gz; // jiroskop verileri
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
 
-  // Sensörden verileri oku
-  mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  Serial.print("Ivme (m/s^2): X=");
+  Serial.print(a.acceleration.x);
+  Serial.print(" | Y=");
+  Serial.print(a.acceleration.y);
+  Serial.print(" | Z=");
+  Serial.print(a.acceleration.z);
 
-  // Ham ivme verileri
-  Serial.print("Ivme -> X: "); Serial.print(ax);
-  Serial.print(" | Y: "); Serial.print(ay);
-  Serial.print(" | Z: "); Serial.println(az);
+  Serial.print(" || Jiroskop (rad/s): X=");
+  Serial.print(g.gyro.x);
+  Serial.print(" | Y=");
+  Serial.print(g.gyro.y);
+  Serial.print(" | Z=");
+  Serial.print(g.gyro.z);
 
-  // Ham jiroskop verileri
-  Serial.print("Gyro -> X: "); Serial.print(gx);
-  Serial.print(" | Y: "); Serial.print(gy);
-  Serial.print(" | Z: "); Serial.println(gz);
+  Serial.print(" || Sicaklik: ");
+  Serial.print(temp.temperature);
+  Serial.println(" °C");
 
-  Serial.println("-----------------------------");
   delay(500);
 }
